@@ -126,7 +126,7 @@ am__objects_1 = sancov_flags.lo sanitizer_allocator.lo \
 	sanitizer_deadlock_detector2.lo sanitizer_errno.lo \
 	sanitizer_file.lo sanitizer_flags.lo sanitizer_flag_parser.lo \
 	sanitizer_libc.lo sanitizer_libignore.lo sanitizer_linux.lo \
-	sanitizer_linux_libcdep.lo sanitizer_linux_s390.lo \
+	sanitizer_linux_libcdep.lo sanitizer_linux_s390.lo sanitizer_linux_mips64.lo \
 	sanitizer_mac.lo sanitizer_mac_libcdep.lo sanitizer_netbsd.lo \
 	sanitizer_openbsd.lo sanitizer_persistent_allocator.lo \
 	sanitizer_platform_limits_linux.lo \
@@ -463,7 +463,8 @@ sanitizer_common_files = \
 	sanitizer_tls_get_addr.cc \
 	sanitizer_unwind_linux_libcdep.cc \
 	sanitizer_unwind_win.cc \
-	sanitizer_win.cc
+	sanitizer_win.cc \
+	sanitizer_linux_mips64.S
 
 libsanitizer_common_la_SOURCES = $(sanitizer_common_files) 
 EXTRA_libsanitizer_common_la_SOURCES = sanitizer_linux_mips64.S sanitizer_linux_x86_64.S

@@ -145,6 +145,8 @@ ASAN_REPORT_ERROR_N(load, false)
 ASAN_REPORT_ERROR_N(store, true)
 
 #define ASAN_MEMORY_ACCESS_CALLBACK_BODY(type, is_write, size, exp_arg, fatal) \
+    if (addr & 0xffff000000000000)                                             \
+      return;                                                                  \
     if (SANITIZER_MYRIAD2 && !AddrIsInMem(addr) && !AddrIsInShadow(addr))      \
       return;                                                                  \
     uptr sp = MEM_TO_SHADOW(addr);                                             \

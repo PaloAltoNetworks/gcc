@@ -186,6 +186,8 @@ uptr __asan_region_is_poisoned(uptr beg, uptr size) {
     if (!AddrIsInMem(beg) && !AddrIsInShadow(beg)) return 0;
     if (!AddrIsInMem(end) && !AddrIsInShadow(end)) return 0;
   } else {
+    if (beg & 0xffff000000000000) return 0;
+    if (end & 0xffff000000000000) return 0;
     if (!AddrIsInMem(beg)) return beg;
     if (!AddrIsInMem(end)) return end;
   }

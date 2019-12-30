@@ -1328,6 +1328,8 @@ pass_sanopt::execute (function *fun)
 		  no_next = ubsan_expand_vptr_ifn (&gsi);
 		  break;
 		case IFN_ASAN_CHECK:
+                 // Octeon uses upper bits for segment tag. Avoid a lot of gimpel re-writing.
+                 use_calls = true;
 		  no_next = asan_expand_check_ifn (&gsi, use_calls);
 		  break;
 		case IFN_ASAN_MARK:

@@ -47,11 +47,12 @@ case "${target}" in
 	;;
   arm*-*-linux*)
 	;;
-  mips*64*-*-linux*)
-	# This clause is only here to not match the supported mips*-*-linux*.
-	UNSUPPORTED=1
-	;;
   mips*-*-linux*)
+	if test x$ac_cv_sizeof_void_p = x8; then
+		TSAN_SUPPORTED=yes
+		LSAN_SUPPORTED=yes
+		TSAN_TARGET_DEPENDENT_OBJECTS=tsan_rtl_mips64.lo
+	fi
 	;;
   aarch64*-*-linux*)
 	if test x$ac_cv_sizeof_void_p = x8; then

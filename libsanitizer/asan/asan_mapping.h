@@ -392,6 +392,10 @@ static inline bool AddressIsPoisoned(uptr a) {
   PROFILE_ASAN_MAPPING();
   if (SANITIZER_MYRIAD2 && !AddrIsInMem(a) && !AddrIsInShadow(a))
     return false;
+  // Ignore access to xkphys etc since Octeon allows them from user mode.
+  // https://university.cavium.com/downloads/00-FUNDAMENTALS_ALL_CHAPTERS_EDU_July_2010.pdf?utm_source=Cavium+Multicore+Contest+List&utm_campaign=c56b6ccb42-Multicore_Challenge_2012&utm_medium=email
+  if (SANITIZER_MIPS64 && (a & 0xffff000000000000))
+    return false;
   const uptr kAccessSize = 1;
   u8 *shadow_address = (u8*)MEM_TO_SHADOW(a);
   s8 shadow_value = *shadow_address;

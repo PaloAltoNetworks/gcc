@@ -22704,7 +22704,13 @@ mips_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 static unsigned HOST_WIDE_INT
 mips_asan_shadow_offset (void)
 {
-  return 0x0aaa0000;
+  if (TARGET_64BIT) {
+    // kMIPS64_ShadowOffset64 from libsanitizer/asan/asan_mapping.h
+    return 1ULL << 37;
+  }
+  else {
+    return 0x0aaa0000;
+  }
 }
 
 /* Implement TARGET_STARTING_FRAME_OFFSET.  See mips_compute_frame_info

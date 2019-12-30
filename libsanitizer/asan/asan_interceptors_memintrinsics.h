@@ -26,6 +26,7 @@ namespace __asan {
 // We assume that a redzone is at least 16 bytes.
 static inline bool QuickCheckForUnpoisonedRegion(uptr beg, uptr size) {
   if (size == 0) return true;
+  if (beg & 0xffff000000000000) return true;
   if (size <= 32)
     return !AddressIsPoisoned(beg) &&
            !AddressIsPoisoned(beg + size - 1) &&
