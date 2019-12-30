@@ -480,7 +480,7 @@ AC_ARG_ENABLE(build-format-warnings,
   AS_HELP_STRING([--disable-build-format-warnings],[don't use -Wformat while building GCC]),
   [],[enable_build_format_warnings=yes])
 AS_IF([test $enable_build_format_warnings = no],
-      [wf_opt=-Wno-format],[wf_opt=])
+      [wf_opt="-Wno-format -Wno-format-security"],[wf_opt=])
 ACX_PROG_CXX_WARNING_OPTS(
 	m4_quote(m4_do([-W -Wall -Wno-narrowing -Wwrite-strings ],
 		       [-Wcast-qual $wf_opt])), [loose_warn])
@@ -5772,6 +5772,24 @@ EOF
     if test -n "$gcc_cv_ld_toc_align" && test $gcc_cv_ld_toc_align -gt 8; then
       AC_DEFINE_UNQUOTED(POWERPC64_TOC_POINTER_ALIGNMENT, $gcc_cv_ld_toc_align,
     [Define to .TOC. alignment forced by your linker.])
+    fi
+
+    AC_CACHE_CHECK(linker support for overlapping .opd entries,
+    gcc_cv_ld_overlapping_opd,
+    [gcc_cv_ld_overlapping_opd=no
+    if test $in_tree_ld = yes ; then
+      if test "$gcc_cv_gld_major_version" -eq 2 -a "$gcc_cv_gld_minor_version" -ge 16 -o "$gcc_cv_gld_major_version" -gt 2; then
+        gcc_cv_ld_overlapping_opd=yes
+      fi
+    elif test x$gcc_cv_ld != x ; then
+      if $gcc_cv_ld -melf64ppc --help 2>/dev/null | grep non-overlapping-opd > /dev/null; then
+        gcc_cv_ld_overlapping_opd=yes
+      fi
+    fi
+    ])
+    if test x"$gcc_cv_ld_overlapping_opd" = xyes; then
+      AC_DEFINE(HAVE_LD_OVERLAPPING_OPD, 1,
+    [Define if your PowerPC64 linker handles overlapping .opd entries.])
     fi
     ;;
 esac

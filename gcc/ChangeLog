@@ -1,3 +1,197 @@
+2019-08-26  Xiong Hu Luo  <luoxhu@linux.ibm.com>
+
+	Backport r274411 from trunk to gcc-9-branch.
+	2019-08-14  Xiong Hu Luo  <luoxhu@linux.ibm.com>
+
+	PR lto/91287
+	* builtins.c (builtin_with_linkage_p): New function.
+	* builtins.h (builtin_with_linkage_p): New function.
+	* symtab.c (write_symbol): Remove redundant assert.
+	* lto-streamer-out.c (symtab_node::output_to_lto_symbol_table_p):
+	Remove FIXME and use builtin_with_linkage_p.
+
+2019-08-25  Uroš Bizjak  <ubizjak@gmail.com>
+
+	PR target/91533
+	Backport from mainline
+	2019-06-30  Uroš Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/sse.md (ssse3_abs<mode>2): Rename from abs<mode>2.
+	* config/i386/i386-builtin.def (__builtin_ia32_pabsb):
+	Use CODE_FOR_ssse3_absv8qi2.
+	(__builtin_ia32_pabsw): Use CODE_FOR_ssse3_absv4hi2.
+	(__builtin_ia32_pabsd): Use CODE_FOR_ssse3_absv2si2.
+
+2019-08-23  Mihailo Stojanovic  <mistojanovic@wavecomp.com>
+
+	Backport from mainline
+	2019-08-23  Mihailo Stojanovic  <mistojanovic@wavecomp.com>
+
+	* config/mips/mips.md (mips_get_fcsr, *mips_get_fcsr): Use SI
+	machine mode for unspec_volatile operand.
+
+2019-08-23  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/91508
+	Backport from mainline
+	2019-08-15  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/91438
+	* cgraph.c (cgraph_node::remove): When setting
+	n->origin = NULL for all nested functions, reset
+	also next_nested.
+
+2019-08-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2019-08-15  Martin Liska  <mliska@suse.cz>
+
+	* cgraph.c (cgraph_node::verify_node): Verify origin, nested
+	and next_nested.
+
+2019-08-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2019-08-15  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/91404
+	* passes.c (order): Remove.
+	(uid_hash_t): Likewise).
+	(remove_cgraph_node_from_order): Remove from set
+	of pointers (cgraph_node *).
+	(insert_cgraph_node_to_order): New.
+	(duplicate_cgraph_node_to_order): New.
+	(do_per_function_toporder): Register all 3 cgraph hooks.
+	Skip removed_nodes now as we know about all of them.
+
+2019-08-21  Iain Sandoe  <iain@sandoe.co.uk>
+
+	Backport from mainline
+	2019-08-18  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* config/rs6000/darwin.h (TARGET_OS_CPP_BUILTINS): Add asserts
+	for cpu and machine.  Factor 64/32b builtins.
+
+2019-08-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/91347
+	* dse.c (scan_insn): Call add_wild_read for non-const/memset tail calls
+	before reload if HARD_FRAME_POINTER_IS_ARG_POINTER.
+
+2019-08-19  Richard Earnshaw  <rearnsha@arm.com>
+
+	Backport from mainline
+	2019-09-09  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR target/91386
+	* config/aarch64/aarch64.c (aarch64_gen_adjusted_ldpstp): Use copy_rtx
+	to preserve the contents of the original insns.
+
+2019-08-16  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	Backport from mainline
+	2019-08-16  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR tree-optimization/91109
+	* lra-int.h (lra_need_for_scratch_reg_p): Declare.
+	* lra.c (lra): Use lra_need_for_scratch_reg_p.
+	* lra-spills.c (lra_need_for_scratch_reg_p): New function.
+
+	2019-08-07  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR tree-optimization/91109
+	* lra-remat.c (update_scratch_ops): Remove assignment of the
+	hard register.
+
+2019-08-15  Steve Ellcey  <sellcey@marvell.com>
+
+	Backport from mainline
+	2019-08-02  Steve Ellcey  <sellcey@marvell.com>
+
+	* omp-simd-clone.c (simd_clone_adjust_return_type): Remove call to
+	build_distinct_type_copy.
+	(simd_clone_adjust_argument_types): Ditto.
+	(simd_clone_adjust): Call build_distinct_type_copy here.
+	(expand_simd_clones): Ditto.
+
+2019-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/91445
+	Backport from mainline
+	2019-07-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/91091
+	* tree-ssa-alias.h (get_continuation_for_phi): Add tbaa_p parameter.
+	(walk_non_aliased_vuses): Likewise.
+	* tree-ssa-alias.c (maybe_skip_until): Pass down tbaa_p.
+	(get_continuation_for_phi): New tbaa_p parameter and pass
+	it down.
+	(walk_non_aliased_vuses): Likewise.
+	* tree-ssa-pre.c (translate_vuse_through_block): Likewise.
+	* tree-ssa-scopedtables.c (avail_exprs_stack::lookup_avail_expr):
+	Likewise.
+	* tree-ssa-sccvn.c (struct vn_walk_cb_data): Add tbaa_p flag.
+	(vn_reference_lookup_3): Handle and pass down tbaa_p flag.
+	(vn_reference_lookup_pieces): Adjust.
+	(vn_reference_lookup): Remove alias-set altering, instead pass
+	down false as tbaa_p.
+
+	2019-07-04  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-sccvn.h (vn_reference_lookup): Add last_vuse_ptr
+	argument.
+	* tree-ssa-sccvn.c (last_vuse_ptr, vn_walk_kind): Move
+	globals into...
+	(struct vn_walk_cb_data): New callback data struct.
+	(vn_reference_lookup_2): Adjust.
+	(vn_reference_lookup_3): Likewise.
+	(vn_reference_lookup_pieces): Likewise.
+	(vn_reference_lookup): Likewise, get last_vuse_ptr argument.
+	(visit_reference_op_load): Adjust.
+
+2019-08-14  Martin Sebor  <msebor@redhat.com>
+
+	Backport from mainline
+
+	2019-08-01  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/90947
+	* tree.c (type_initializer_zero_p): Define.
+	* tree.h (type_initializer_zero_p): New function.
+
+	2019-08-05  Martin Sebor  <msebor@redhat.com>
+
+	* doc/extend.texi (Common Variable Attributes): Document alias
+	attribute.
+
+2019-08-12  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2019-08-12  Richard Biener  <rguenther@suse.de>
+
+	PR lto/91375
+	* tree.c (free_lang_data_in_type): Do not free TYPE_BINFO dependent on
+	flag_devirtualize.
+
+	2019-08-12  Richard Biener  <rguenther@suse.de>
+
+	PR driver/91130
+	* lto-wrapper.c (get_options_from_collect_gcc_options): Remove
+	lang_mask option, always use CL_DRIVER.
+	(find_and_merge_options): Adjust.
+	(run_gcc): Likewise.
+
+	2019-08-07  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR driver/91130
+	* lto-wrapper.c (find_and_merge_options): Use CL_DRIVER when
+	processing COLLECT_GCC_OPTIONS.
+	(run_gcc): Likewise.
+
+2019-08-12  Jakub Jelinek  <jakub@redhat.com>
+
+	* BASE-VER: Set to 9.2.1.
+
 2019-08-12  Release Manager
 
 	* GCC 9.2.0 released.
@@ -513,7 +707,7 @@
 
 2019-07-11  Uroš Bizjak  <ubizjak@gmail.com>
 
-	Backported from mainline
+	Backport from mainline
 	2019-07-06  Richard Sandiford  <richard.sandiford@arm.com>
 
 	* config/i386/sse.md (*andnot<mode>3_bcst): Fix VI/VI48_AVX512VL typo.
@@ -7579,6 +7773,43 @@
 
 	* config/aarch64/aarch64-sve.md (copysign<mode>3): New define_expand.
 	(xorsign<mode>3): Likewise.
+
+2010-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/rs6000/rs6000.c (rs6000_elf_end_indicate_exec_stack): New.
+	* config/rs6000/linux64.h (TARGET_ASM_FILE_END): Use
+	rs6000_elf_end_indicate_exec_stack.
+	* config/ia64/ia64.c (ia64_linux_file_end): New.
+	* config/ia64/linux.h (TARGET_ASM_FILE_END): Use ia64_linux_file_end.
+
+	* cppbuiltin.c (define__GNUC__): Also define __GNUC_RH_RELEASE__.
+
+	* config/ia64/ia64.h (FRAME_GROWS_DOWNWARD): Define to 1 if
+	-fstack-protect.
+	* config/ia64/ia64.c (ia64_compute_frame_size): Make sure
+	size is a multiple of 16 if FRAME_GROWS_DOWNWARD.
+	(ia64_initial_elimination_offset): Support FRAME_GROWS_DOWNWARD
+	layout.
+	* config/ia64/linux.h (TARGET_LIBC_PROVIDES_SSP): Define.
+	* config/ia64/ia64.md (stack_protect_set, stack_protect_test): New
+	expanders.
+
+	Revert:
+	2005-04-29  Alan Modra  <amodra@bigpond.net.au>
+	PR target/21098
+	* config/rs6000/rs6000.c (rs6000_elf_end_indicate_exec_stack): New.
+	* config/rs6000/linux64.h (TARGET_ASM_FILE_END): Use the above.
+
+	* config/rs6000/ppc-asm.h: Add .note.GNU-stack section also
+	on ppc64-linux.
+
+	* config/ia64/linux.h (TARGET_ASM_FILE_END): Define.
+
+	* configure.ac (HAVE_LD_OVERLAPPING_OPD): New test.
+	* configure: Rebuilt.
+	* config.in: Rebuilt.
+	* config/rs6000/rs6000.c (OVERLAPPING_OPD): Define.
+	(rs6000_elf_declare_function_name): Use it.
 
 2019-01-09  Jelinek  <jakub@redhat.com>
 

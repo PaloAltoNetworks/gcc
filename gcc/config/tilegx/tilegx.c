@@ -5364,7 +5364,7 @@ tilegx_print_operand (FILE *file, rtx x, int code)
 	    gcc_unreachable ();
 	  }
 
-	fprintf (file, reg);
+	fprintf (file, "%s", reg);
 	return;
       }
 

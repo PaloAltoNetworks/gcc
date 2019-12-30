@@ -52,6 +52,7 @@ along with GCC; see the file COPYING3.  If not see
 /* Environment variable, used for passing the names of offload targets from GCC
    driver to lto-wrapper.  */
 #define OFFLOAD_TARGET_NAMES_ENV	"OFFLOAD_TARGET_NAMES"
+#define OFFLOAD_TARGET_DEFAULT_ENV	"OFFLOAD_TARGET_DEFAULT"
 
 enum lto_mode_d {
   LTO_MODE_NONE,			/* Not doing LTO.  */
@@ -128,12 +129,11 @@ maybe_unlink (const char *file)
 #define DUMPBASE_SUFFIX ".ltrans18446744073709551615"
 
 /* Create decoded options from the COLLECT_GCC and COLLECT_GCC_OPTIONS
-   environment according to LANG_MASK.  */
+   environment.  */
 
 static void
 get_options_from_collect_gcc_options (const char *collect_gcc,
 				      const char *collect_gcc_options,
-				      unsigned int lang_mask,
 				      struct cl_decoded_option **decoded_options,
 				      unsigned int *decoded_options_count)
 {
@@ -175,8 +175,7 @@ get_options_from_collect_gcc_options (const char *collect_gcc,
   argc = obstack_object_size (&argv_obstack) / sizeof (void *) - 1;
   argv = XOBFINISH (&argv_obstack, const char **);
 
-  decode_cmdline_options_to_array (argc, (const char **)argv,
-				   lang_mask,
+  decode_cmdline_options_to_array (argc, (const char **)argv, CL_DRIVER,
 				   decoded_options, decoded_options_count);
   obstack_free (&argv_obstack, NULL);
 }
@@ -820,6 +819,12 @@ compile_offload_image (const char *target, const char *compiler_path,
 	break;
       }
 
+  if (!compiler && getenv (OFFLOAD_TARGET_DEFAULT_ENV))
+    {
+      free_array_of_ptrs ((void **) paths, n_paths);
+      return NULL;
+    }
+
   if (!compiler)
     fatal_error (input_location,
 		 "could not find %s in %s (consider using %<-B%>)\n",
@@ -883,6 +888,7 @@ compile_images_for_offload_targets (unsigned in_argc, char *in_argv[],
   unsigned num_targets = parse_env_var (target_names, &names, NULL);
 
   int next_name_entry = 0;
+  bool hsa_seen = false;
   const char *compiler_path = getenv ("COMPILER_PATH");
   if (!compiler_path)
     goto out;
@@ -895,16 +901,24 @@ compile_images_for_offload_targets (unsigned in_argc, char *in_argv[],
       /* HSA does not use LTO-like streaming and a different compiler, skip
 	 it. */
       if (strcmp (names[i], "hsa") == 0)
-	continue;
+	{
+	  hsa_seen = true;
+	  continue;
+	}
 
       offload_names[next_name_entry]
 	= compile_offload_image (names[i], compiler_path, in_argc, in_argv,
 				 compiler_opts, compiler_opt_count,
 				 linker_opts, linker_opt_count);
       if (!offload_names[next_name_entry])
-	fatal_error (input_location,
-		     "problem with building target image for %s\n", names[i]);
+	continue;
       next_name_entry++;
+    }
+
+  if (next_name_entry == 0 && !hsa_seen)
+    {
+      free (offload_names);
+      offload_names = NULL;
     }
 
  out:
@@ -1008,8 +1022,7 @@ find_and_merge_options (int fd, off_t file_offset, const char *prefix,
     {
       struct cl_decoded_option *f2decoded_options;
       unsigned int f2decoded_options_count;
-      get_options_from_collect_gcc_options (collect_gcc,
-					    fopts, CL_LANG_ALL,
+      get_options_from_collect_gcc_options (collect_gcc, fopts,
 					    &f2decoded_options,
 					    &f2decoded_options_count);
       if (!fdecoded_options)
@@ -1150,7 +1163,6 @@ run_gcc (unsigned argc, char *argv[])
     fatal_error (input_location,
 		 "environment variable COLLECT_GCC_OPTIONS must be set");
   get_options_from_collect_gcc_options (collect_gcc, collect_gcc_options,
-					CL_LANG_ALL,
 					&decoded_options,
 					&decoded_options_count);
 

@@ -605,6 +605,25 @@ static tree mips_handle_interrupt_attr (tree *, tree, tree, int, bool *);
 static tree mips_handle_use_shadow_register_set_attr (tree *, tree, tree, int,
 						      bool *);
 
+/* Accept only Variable decls.  */
+
+static tree
+accept_var_decls_only (tree *node, tree name, 
+		       tree args ATTRIBUTE_UNUSED, 
+		       int flags ATTRIBUTE_UNUSED, 
+		       bool *no_add_attrs)
+{
+  if (TREE_CODE (*node) != VAR_DECL)
+    {
+      warning (OPT_Wattributes, "%qs attribute only applies to variables",
+              IDENTIFIER_POINTER (name));
+      *no_add_attrs = true;
+    }
+
+  return NULL_TREE;
+}
+
+
 /* The value of TARGET_ATTRIBUTE_TABLE.  */
 static const struct attribute_spec mips_attribute_table[] = {
   /* { name, min_len, max_len, decl_req, type_req, fn_type_req,
@@ -622,6 +641,8 @@ static const struct attribute_spec mips_attribute_table[] = {
   { "micromips",   0, 0, true,  false, false, false, NULL, NULL },
   { "nomicromips", 0, 0, true,  false, false, false, NULL, NULL },
   { "nocompression", 0, 0, true,  false, false, false, NULL, NULL },
+  { "cvmx_shared", 0, 0, true, false, false, false, accept_var_decls_only, NULL },
+  { "cvmx_noshared", 0, 0, true, false, false, false, accept_var_decls_only, NULL },
   /* Allow functions to be specified as interrupt handlers */
   { "interrupt",   0, 1, false, true,  true, false, mips_handle_interrupt_attr,
     NULL },
@@ -1466,6 +1487,8 @@ static tree
 mips_merge_decl_attributes (tree olddecl, tree newdecl)
 {
   unsigned int diff;
+  bool old_has;
+  bool new_has;
 
   diff = (mips_get_compress_on_flags (DECL_ATTRIBUTES (olddecl))
 	  ^ mips_get_compress_on_flags (DECL_ATTRIBUTES (newdecl)));
@@ -1479,6 +1502,18 @@ mips_merge_decl_attributes (tree olddecl, tree newdecl)
     error ("%qE redeclared with conflicting %qs attributes",
 	   DECL_NAME (newdecl), mips_get_compress_off_name (diff));
 
+  old_has = mips_cvmx_shared_decl_p (olddecl);
+  new_has = mips_cvmx_shared_decl_p (newdecl);
+  if (old_has && !new_has)
+    {
+      if (warning (OPT_Wattributes, "%q+D is not declared as being CVMX_SHARED while previous was", newdecl))
+        inform (input_location, "previous declaration of %q+D was here", olddecl);
+    }
+  if (!old_has && new_has)
+    {
+      if (warning (OPT_Wattributes, "%q+D is declared as being CVMX_SHARED while previous was not", newdecl))
+        inform (input_location, "previous declaration of %q+D was here", olddecl);
+    }
   return merge_attributes (DECL_ATTRIBUTES (olddecl),
 			   DECL_ATTRIBUTES (newdecl));
 }
@@ -5726,6 +5761,25 @@ mips_expand_vcondv2sf (rtx dest, rtx true_src, rtx false_src,
 					 cmp_result));
 }
 
+/* Compare OPERANDS[2] with OPERANDS[3] using comparison code
+   CODE and move 1 or 0 into OPERANDS[0].   */
+
+void
+mips_expand_cstore_fp (rtx *operands)
+{
+  enum rtx_code code = GET_CODE (operands[1]);
+  rtx op0 = operands[2];
+  rtx op1 = operands[3];
+  rtx cond;
+  rtx regone = force_reg (GET_MODE (operands[0]), const1_rtx);
+
+  mips_emit_compare (&code, &op0, &op1, true);
+  cond = gen_rtx_fmt_ee (code, GET_MODE (op0), op0, op1);
+  emit_insn (gen_rtx_SET (operands[0],
+			  gen_rtx_IF_THEN_ELSE (GET_MODE (operands[0]), cond,
+						regone, const0_rtx)));
+}
+
 /* Perform the comparison in OPERANDS[1].  Move OPERANDS[2] into OPERANDS[0]
    if the condition holds, otherwise move OPERANDS[3] into OPERANDS[0].  */
 
@@ -9345,6 +9399,23 @@ mips_function_rodata_section (tree decl)
   return data_section;
 }
 
+bool
+mips_cvmx_shared_decl_p (const_tree decl)
+{
+  if (!TARGET_OCTEON)
+    return false;
+  if (!decl)
+    return false;
+  if (TREE_CODE (decl) != VAR_DECL)
+    return false;
+  if (TARGET_SHARED_VARIABLES && !lookup_attribute ("cvmx_noshared", DECL_ATTRIBUTES (decl)))
+    return true;
+  if (lookup_attribute ("cvmx_shared", DECL_ATTRIBUTES (decl)))
+    return true;
+  return false;
+}
+
+
 /* Implement TARGET_IN_SMALL_DATA_P.  */
 
 static bool
@@ -9359,6 +9430,10 @@ mips_in_small_data_p (const_tree decl)
      or VxWorks RTP code.  See the related -G handling in
      mips_option_override.  */
   if (TARGET_ABICALLS || TARGET_VXWORKS_RTP)
+    return false;
+
+  /* cvmx_shared is in a separate program header from data.  */
+  if (mips_cvmx_shared_decl_p (decl))
     return false;
 
   if (TREE_CODE (decl) == VAR_DECL && DECL_SECTION_NAME (decl) != 0)
@@ -20335,6 +20410,11 @@ mips_option_override (void)
   if ((target_flags_explicit & MASK_FIX_R5900) == 0
       && strcmp (mips_arch_info->name, "r5900") == 0)
     target_flags |= MASK_FIX_R5900;
+  /* Enable TLS acceleration for Octeon but not for Octeon II.  On Octeon II
+     $29 is a real HW register dedicated to the thread pointer.  */
+  if ((target_flags_explicit & MASK_TLS_ACCEL) == 0
+      && strcmp (mips_arch_info->name, "octeon") == 0)
+    target_flags |= MASK_TLS_ACCEL;
 
   /* Default to working around R10000 errata only if the processor
      was selected explicitly.  */
@@ -20636,6 +20716,134 @@ mips_final_postscan_insn (FILE *file ATTRIBUTE_UNUSED, rtx_insn *insn,
     mips_set_text_contents_type (asm_out_file, "__pend_",
 				 INTVAL (XVECEXP (PATTERN (insn), 0, 0)),
 				 TRUE);
+}
+
+static void octeon_unique_section (tree, int) ATTRIBUTE_UNUSED;
+static section * octeon_select_section (tree, int, unsigned HOST_WIDE_INT)
+  ATTRIBUTE_UNUSED;
+
+/* Switch to the appropriate section for output of DECL.
+   DECL is either a `VAR_DECL' node or a constant of some sort.
+   RELOC indicates whether forming the initial value of DECL requires
+   link-time relocations.  */
+
+static section *
+octeon_select_section (tree decl, int reloc, unsigned HOST_WIDE_INT align)
+{
+  if (mips_cvmx_shared_decl_p (decl))
+    {
+      const char *sname = NULL;
+      unsigned int flags = SECTION_WRITE;
+
+      switch (categorize_decl_for_section (decl, reloc))
+        {
+	case SECCAT_DATA:
+	case SECCAT_SDATA:
+	case SECCAT_RODATA:
+	case SECCAT_SRODATA:
+	case SECCAT_RODATA_MERGE_STR:
+	case SECCAT_RODATA_MERGE_STR_INIT:
+	case SECCAT_RODATA_MERGE_CONST:
+	case SECCAT_DATA_REL:
+	case SECCAT_DATA_REL_LOCAL:
+	case SECCAT_DATA_REL_RO:
+	case SECCAT_DATA_REL_RO_LOCAL:
+	  sname = ".cvmx_shared";
+	  break;
+	case SECCAT_BSS:
+	case SECCAT_SBSS:
+	  sname = ".cvmx_shared_bss";
+	  flags |= SECTION_BSS;
+	  break;
+	case SECCAT_TEXT:
+	case SECCAT_TDATA:
+	case SECCAT_TBSS:
+	  break;
+	default:
+	  gcc_unreachable ();
+        }
+      if (sname)
+	return get_section (sname, flags, decl);
+    }
+
+  return default_elf_select_section (decl, reloc, align);
+}
+
+/* Build up a unique section name, expressed as a STRING_CST node, and assign
+   it to DECL_SECTION_NAME (decl).  RELOC indicates whether the initial value
+   of EXP requires link-time relocations.  */
+
+static void 
+octeon_unique_section (tree decl, int reloc)
+{
+  if (mips_cvmx_shared_decl_p (decl))
+    {
+      const char *sname = NULL;
+
+      if (! DECL_ONE_ONLY (decl))
+	{
+	  octeon_select_section (decl, reloc, DECL_ALIGN (decl));
+	  return;
+	}
+
+      switch (categorize_decl_for_section (decl, reloc))
+        {
+	  case SECCAT_BSS:
+	  case SECCAT_SBSS:
+	    sname = ".cvmx_shared_bss.linkonce."; 
+	    break;
+	  case SECCAT_SDATA:
+	  case SECCAT_DATA:
+	  case SECCAT_DATA_REL:
+	  case SECCAT_DATA_REL_LOCAL:
+	  case SECCAT_DATA_REL_RO:
+	  case SECCAT_DATA_REL_RO_LOCAL:
+	  case SECCAT_RODATA:
+	  case SECCAT_SRODATA:
+	  case SECCAT_RODATA_MERGE_STR:
+	  case SECCAT_RODATA_MERGE_STR_INIT:
+	  case SECCAT_RODATA_MERGE_CONST:
+	    sname = ".cvmx_shared.linkonce.";
+	    break;
+	  case SECCAT_TEXT:
+	  case SECCAT_TDATA:
+	  case SECCAT_TBSS:
+	    break; 
+	}
+      if (sname)
+        {
+	  const char *name;
+	  size_t plen, nlen;
+	  char *string;
+	  plen = strlen (sname);
+
+	  name = IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (decl));
+	  name = targetm.strip_name_encoding (name);
+	  nlen = strlen (name);
+
+	  string = XALLOCAVAR (char, plen + nlen + 1);
+	  memcpy (string, sname, plen);
+	  memcpy (string + plen, name, nlen + 1);
+	  decl = build_string (nlen + plen, string);
+	  set_decl_section_name (decl, string);
+	  return;
+        }
+    }
+  default_unique_section (decl, reloc);
+}
+
+/* Emit an uninitialized cvmx_shared variable.  */
+void
+octeon_output_shared_variable (FILE *stream, tree decl, const char *name,
+                               unsigned HOST_WIDE_INT size, int align)
+{
+  section *s;
+
+  s = get_section (".cvmx_shared_bss", CVMX_SHARED_BSS_FLAGS, NULL_TREE);
+  switch_to_section (s);
+  ASM_OUTPUT_ALIGN (stream, floor_log2 (align / BITS_PER_UNIT));
+  ASM_DECLARE_OBJECT_NAME (stream, name, decl);
+  ASM_OUTPUT_SKIP (stream, size != 0 ? size : 1);
 }
 
 /* Return the function that is used to expand the <u>mulsidi3 pattern.

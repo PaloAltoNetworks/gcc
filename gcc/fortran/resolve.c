@@ -13539,14 +13539,34 @@ resolve_typebound_procedure (gfc_symtree* stree)
     }
   else
     {
+      /* If proc has not been resolved at this point, proc->name may 
+	 actually be a USE associated entity. See PR fortran/89647. */
+      if (!proc->resolved
+	  && proc->attr.function == 0 && proc->attr.subroutine == 0)
+	{
+	  gfc_symbol *tmp;
+	  gfc_find_symbol (proc->name, gfc_current_ns->parent, 1, &tmp);
+	  if (tmp && tmp->attr.use_assoc)
+	    {
+	      proc->module = tmp->module;
+	      proc->attr.proc = tmp->attr.proc;
+	      proc->attr.function = tmp->attr.function;
+	      proc->attr.subroutine = tmp->attr.subroutine;
+	      proc->attr.use_assoc = tmp->attr.use_assoc;
+	      proc->ts = tmp->ts;
+	      proc->result = tmp->result;
+	    }
+	}
+
       /* Check for F08:C465.  */
       if ((!proc->attr.subroutine && !proc->attr.function)
 	  || (proc->attr.proc != PROC_MODULE
 	      && proc->attr.if_source != IFSRC_IFBODY)
 	  || proc->attr.abstract)
 	{
-	  gfc_error ("%qs must be a module procedure or an external procedure with"
-		    " an explicit interface at %L", proc->name, &where);
+	  gfc_error ("%qs must be a module procedure or an external "
+		     "procedure with an explicit interface at %L",
+		     proc->name, &where);
 	  goto error;
 	}
     }
@@ -15662,8 +15682,6 @@ check_data_variable (gfc_data_variable *var, locus *where)
       return false;
     }
 
-  has_pointer = sym->attr.pointer;
-
   if (gfc_is_coindexed (e))
     {
       gfc_error ("DATA element %qs at %L cannot have a coindex", sym->name,
@@ -15671,19 +15689,30 @@ check_data_variable (gfc_data_variable *var, locus *where)
       return false;
     }
 
+  has_pointer = sym->attr.pointer;
+
   for (ref = e->ref; ref; ref = ref->next)
     {
       if (ref->type == REF_COMPONENT && ref->u.c.component->attr.pointer)
 	has_pointer = 1;
 
-      if (has_pointer
-	    && ref->type == REF_ARRAY
-	    && ref->u.ar.type != AR_FULL)
-	  {
-	    gfc_error ("DATA element %qs at %L is a pointer and so must "
-			"be a full array", sym->name, where);
-	    return false;
-	  }
+      if (has_pointer)
+	{
+	  if (ref->type == REF_ARRAY && ref->u.ar.type != AR_FULL)
+	    {
+	      gfc_error ("DATA element %qs at %L is a pointer and so must "
+			 "be a full array", sym->name, where);
+	      return false;
+	    }
+
+	  if (values.vnode->expr->expr_type == EXPR_CONSTANT)
+	    {
+	      gfc_error ("DATA object near %L has the pointer attribute "
+			 "and the corresponding DATA value is not a valid "
+			 "initial-data-target", where);
+	      return false;
+	    }
+	}
     }
 
   if (e->rank == 0 || has_pointer)

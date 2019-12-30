@@ -7507,8 +7507,17 @@
 	(unspec:P [(const_int 0)] UNSPEC_TLS_GET_TP))
    (clobber (reg:P TLS_GET_TP_REGNUM))]
   "HAVE_AS_TLS && !TARGET_MIPS16"
-  "#"
-  "&& reload_completed"
+{
+  /* The Kernel stores the value of "rdhwr v1,$29" in k0 ($26) register. And 
+     it is the Kernel's responsibility to always have the correct value of k0. 
+     Move k0 in v1 register instead of using rdhwr instruction as this
+     instruction needs to be emulated by the Kernel.  */
+  if (TARGET_TLS_ACCEL)
+    return "move\t%0,$26";
+  else
+    return "#";
+}
+  "&& reload_completed && !TARGET_TLS_ACCEL"
   [(set (reg:P TLS_GET_TP_REGNUM)
 	(unspec:P [(const_int 0)] UNSPEC_TLS_GET_TP))
    (set (match_dup 0) (reg:P TLS_GET_TP_REGNUM))]
@@ -7530,7 +7539,10 @@
   [(set_attr "type" "unknown")
    ; Since rdhwr always generates a trap for now, putting it in a delay
    ; slot would make the kernel's emulation of it much slower.
-   (set_attr "can_delay" "no")
+   (set (attr "can_delay")
+	(if_then_else (ne (symbol_ref "TARGET_TLS_ACCEL") (const_int 0))
+		      (const_string "yes")
+		      (const_string "no")))
    (set_attr "mode" "<MODE>")])
 
 ;; In MIPS16 mode, the TLS base pointer is accessed by a
@@ -7588,7 +7600,7 @@
 ;; __builtin_mips_get_fcsr: move the FCSR into operand 0.
 (define_expand "mips_get_fcsr"
   [(set (match_operand:SI 0 "register_operand")
-  	(unspec_volatile [(const_int 0)] UNSPEC_GET_FCSR))]
+       (unspec_volatile:SI [(const_int 0)] UNSPEC_GET_FCSR))]
   "TARGET_HARD_FLOAT_ABI"
 {
   if (TARGET_MIPS16)
@@ -7600,7 +7612,7 @@
 
 (define_insn "*mips_get_fcsr"
   [(set (match_operand:SI 0 "register_operand" "=d")
-  	(unspec_volatile [(const_int 0)] UNSPEC_GET_FCSR))]
+       (unspec_volatile:SI [(const_int 0)] UNSPEC_GET_FCSR))]
   "TARGET_HARD_FLOAT"
   "cfc1\t%0,$31")
 

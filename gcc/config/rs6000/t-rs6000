@@ -77,3 +77,4 @@ MD_INCLUDES = $(srcdir)/config/rs6000/rs64.md \
 	$(srcdir)/config/rs6000/crypto.md \
 	$(srcdir)/config/rs6000/htm.md \
 	$(srcdir)/config/rs6000/dfp.md
+TM_H += $(srcdir)/config/rs6000/rs6000-modes.h

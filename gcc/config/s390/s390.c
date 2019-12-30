@@ -7771,11 +7771,11 @@ print_operand (FILE *file, rtx x, int code)
 #endif
       return;
     case 'C':
-      fprintf (file, s390_branch_condition_mnemonic (x, FALSE));
+      fprintf (file, "%s", s390_branch_condition_mnemonic (x, FALSE));
       return;
 
     case 'D':
-      fprintf (file, s390_branch_condition_mnemonic (x, TRUE));
+      fprintf (file, "%s", s390_branch_condition_mnemonic (x, TRUE));
       return;
 
     case 'E':

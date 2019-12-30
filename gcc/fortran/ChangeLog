@@ -1,3 +1,95 @@
+2019-08-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/91485
+	module.c (gfc_match_use): User defined operator cannot conflict with
+	a rename symbol.
+
+2019-08-17  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/91471
+	* primary.c (gfc_variable_attr): Remove a gfc_internal_error(),
+	which cannot be reached by conforming Fortran code, but seems to
+	be reachable from nonconforming Fortran code.  Treat the AR_UNKNOWN
+	case as a no-op.
+
+2019-08-17  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78739
+	* match.c (gfc_match_st_function):  When matching a statement function,
+	need to check if the statement function name shadows the function
+	name.
+
+2019-08-17  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78719
+	* decl.c (get_proc_name): Check for a CLASS entity when trying to
+	add attributes to an entity that already has an explicit interface.
+
+2019-08-17  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/82992
+	* module.c (gfc_match_use):  When renaming a module entity, search
+	current namespace for conflicting symbol.
+
+2019-08-13  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/87991
+	* resolve.c (check_data_variable): data-stmt-object with pointer
+	attribute requires a data-stmt-value with the target attribute.
+
+2013-08-13  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/90563
+	* frontend-passes.c (insert_index): Suppress errors while
+	simplifying the resulting expression.
+ 
+2019-08-13  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/88072
+	* misc.c (gfc_typename): Do not point to something that ought not to
+	be pointed at.
+
+2019-08-13  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/90561
+	* trans.h (gfc_evaluate_now_function_scope): New function.
+	* trans.c (gfc_evaluate_now_function_scope): New function.
+	* trans-expr.c (gfc_trans_assignment): Use it.
+
+2019-08-13  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/89647
+	resolve.c (resolve_typebound_procedure): Allow host associated
+	procedure to be a binding target.  While here, wrap long line.
+
+2019-08-13  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/87993
+	* expr.c (gfc_simplify_expr): Simplifcation of an array with a kind
+	type inquiry suffix yields a constant expression.
+
+2019-08-13  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/91424
+	* frontend-passes.c (do_subscript): Do not warn for an
+	expression a second time.  Do not warn about a zero-trip loop.
+	(doloop_warn): Also look at contained namespaces.
+
+2019-08-12  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/91359
+	* trans-decl.c (gfc_generate_return): Ensure something is returned
+	from a function.
+
+2019-08-12  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/42546
+	* check.c(gfc_check_allocated): Add comment pointing to ...
+ 	* intrinsic.c(sort_actual): ... the checking done here.
+
 2019-08-12  Release Manager
 
 	* GCC 9.2.0 released.

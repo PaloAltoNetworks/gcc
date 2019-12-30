@@ -440,6 +440,10 @@ mframe-header-opt
 Target Report Var(flag_frame_header_optimization) Optimization
 Optimize frame header.
 
+mshared-variables
+Target Report Var(TARGET_SHARED_VARIABLES)
+Put all non-automatic variables in the shared address space
+
 noasmopt
 Driver
 
@@ -475,3 +479,7 @@ Use Loongson EXTension (EXT) instructions.
 mloongson-ext2
 Target Report Var(TARGET_LOONGSON_EXT2)
 Use Loongson EXTension R2 (EXT2) instructions.
+
+mtls-accel
+Target Report Mask(TLS_ACCEL)
+Use accelerated method to access the thread pointer

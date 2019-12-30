@@ -230,6 +230,7 @@ extern void mips_restore_gp_from_cprestore_slot (rtx);
 #ifdef RTX_CODE
 extern void mips_expand_scc (rtx *);
 extern void mips_expand_conditional_branch (rtx *);
+extern void mips_expand_cstore_fp (rtx *);
 extern void mips_expand_vcondv2sf (rtx, rtx, rtx, enum rtx_code, rtx, rtx);
 extern void mips_expand_conditional_move (rtx *);
 extern void mips_expand_conditional_trap (rtx);
@@ -246,6 +247,8 @@ extern bool mips_expand_block_move (rtx, rtx, rtx);
 extern void mips_expand_synci_loop (rtx, rtx);
 
 extern void mips_init_cumulative_args (CUMULATIVE_ARGS *, tree);
+extern bool mips_cvmx_shared_decl_p (const_tree);
+extern bool mips_pad_arg_upward (machine_mode, const_tree);
 extern bool mips_pad_reg_upward (machine_mode, tree);
 
 extern bool mips_expand_ext_as_unaligned_load (rtx, rtx, HOST_WIDE_INT,
@@ -259,6 +262,10 @@ extern void mips_push_asm_switch (struct mips_asm_switch *);
 extern void mips_pop_asm_switch (struct mips_asm_switch *);
 extern void mips_output_external (FILE *, tree, const char *);
 extern void mips_output_ascii (FILE *, const char *, size_t);
+extern void octeon_output_shared_variable (FILE *, tree, const char *,
+					   unsigned HOST_WIDE_INT, int);
+extern void mips_output_aligned_bss (FILE *, tree, const char *,
+				     unsigned HOST_WIDE_INT, int);
 extern const char *mips_output_tls_reloc_directive (rtx *);
 extern void mips_output_aligned_decl_common (FILE *, tree, const char *,
 					     unsigned HOST_WIDE_INT,

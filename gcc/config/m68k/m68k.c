@@ -4482,7 +4482,7 @@ print_operand (FILE *file, rtx op, int letter)
   else if (letter == '/')
     asm_fprintf (file, "%R");
   else if (letter == '?')
-    asm_fprintf (file, m68k_library_id_string);
+    asm_fprintf (file, "%s", m68k_library_id_string);
   else if (letter == 'p')
     {
       output_addr_const (file, op);
